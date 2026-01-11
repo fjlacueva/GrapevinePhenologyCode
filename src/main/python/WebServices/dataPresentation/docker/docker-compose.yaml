@@ -1,0 +1,82 @@
+# Let's encrypt certificates generated as described in https://pentacent.medium.com/nginx-and-lets-encrypt-with-docker-in-less-than-5-minutes-b4b8a60d3a71
+
+version: '2.2'
+services:
+  # certbot:
+  #   image: certbot/certbot
+  #   container_name: 'certbot'
+  #   volumes:
+  #     - ./../certificates/certbot/conf:/etc/letsencrypt
+  #     - ./../certificates/certbot/www:/var/www/certbot
+  #   entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 24h & wait $${!}; done;'"
+  #   # entrypoint: "/bin/sh -c 'while :; do sleep 12h; done'"
+  nginx:
+    image: "nginx:1.19"
+    restart: always
+    container_name: 'nginx'
+    ports:
+      # - "80:80"
+      - "443:443"
+    depends_on:
+      # - certbot
+      - dataPresentationWS
+      # - ws_forecast
+    volumes:
+      - ./../nginx:/etc/nginx/conf.d/
+      - /projects/certificates/itainnova.es:/certificates
+      # - ./../certificates/certbot/www:/var/www/certbot
+      # - ./../schindler:/schindler
+    logging:
+      &logging
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - frontendNetwork
+    command: "/bin/sh -c 'while :; do sleep 12h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
+    # command: "/bin/sh -c 'while :; do sleep 12h; done'"
+
+
+  dataPresentationWS:
+    image: "dockerflask:latest"
+    container_name: 'dataPresentationWS'
+    restart: always
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "curl",
+          "-f",
+          "http://localhost:8000/healthCheck"
+        ]
+      interval: 3600s
+      timeout: 10s
+      retries: 3
+    logging: *logging
+    environment:
+      PYTHONPATHS: /pythonLibs
+      PYTHONENV: /pythonEnv
+      WORKINGFOLDER: /tmp
+      DATAPATH: /data/dataPresentation
+      LOGSPATH: /logs
+      COPYFILE: "True"
+      LOGLEVEL: DEBUG
+      LOGFILESIZEMAXBYTES: 5242880
+    volumes:
+      - ./../:/python
+      - /projects/grapevine/GIT/src/src/main/python/Tools:/pythonLibs/
+      - /python/.envs/dataPresentationEnv:/pythonEnv
+      - /projects/grapevine/GIT/src/data:/data
+      - /projects/grapevine/GIT/src/logs:/logs
+      - /tmp/forticlientsslvpn/:/forticlientsslvpn/
+    # extra_hosts:
+    # - "host.docker.internal:host-gateway"
+    networks:
+      - frontendNetwork
+    entrypoint: /bin/bash -c "$$PYTHONENV/bin/python /python/dataPresentation.py 8000"
+    # entrypoint: "/bin/sh -c 'while :; do sleep 12h; done'"
+networks:
+  frontendNetwork:
+    driver: bridge # Let's encrypt certificates generated as described in https://pentacent.medium.com/nginx-and-lets-encrypt-with-docker-in-less-than-5-minutes-b4b8a60d3a71

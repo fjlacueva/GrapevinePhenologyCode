@@ -1,0 +1,19 @@
+# https://dev.to/vepo/finding-dns-for-kubernetes-service-3p0e
+# k -n cs apply -f  /project/dv4cul/infrastructure/Data-Service-Consumer/tools/dnsutil.yaml
+# k -n cs delete -f /project/dv4cul/infrastructure/Data-Service-Consumer/tools/dnsutil.yaml
+# k -n cs exec -ti dnsutils -- nslookup <serviceName>
+# . exec.sh pv dns nslookup <SN>
+apiVersion: v1
+kind: Pod
+metadata:
+  name: dnsutils
+  # namespace: mk
+spec:
+  containers:
+  - name: dnsutils
+    image: gcr.io/kubernetes-e2e-test-images/dnsutils:1.3
+    command:
+      - sleep
+      - "3600"
+    imagePullPolicy: IfNotPresent
+  restartPolicy: Always

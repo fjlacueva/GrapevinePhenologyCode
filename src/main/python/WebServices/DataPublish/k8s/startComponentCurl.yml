@@ -1,0 +1,7 @@
+#!/bin/bash
+NSPACE=itainnova
+COMPONENTSPATH='./..'
+
+kubectl -n $NSPACE delete -f $COMPONENTSPATH/curl.yml
+sleep 1
+kubectl -n $NSPACE apply  -f $COMPONENTSPATH/curl.yml
