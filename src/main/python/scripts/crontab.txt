@@ -1,0 +1,7 @@
+El objetivo es realizar un crontab que recupere la información una vez cada semana y almacene en BBDD.
+
+Hay que asegurar dónde está el servidor y cómo está configurado. Dependiendo de eso, la configuración se podrá realizar directamente en el host o habrá que configurar un docker y crear el crontab allí.
+
+https://diarioinforme.com/como-usar-cron-con-sus-contenedores-docker/
+
+*/5 * * * * docker exec example_app_container /example-scheduled-task.sh
