@@ -1,0 +1,92 @@
+# Let's encrypt certificates generated as described in https://pentacent.medium.com/nginx-and-lets-encrypt-with-docker-in-less-than-5-minutes-b4b8a60d3a71
+
+version: '2.2'
+services:
+  # certbot:
+  #   image: certbot/certbot
+  #   container_name: 'certbot'
+  #   volumes:
+  #     - ./certificates/certbot/conf:/etc/letsencrypt
+  #     - ./certificates/certbot/www:/var/www/certbot
+  #   entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 24h & wait $${!}; done;'"
+
+  nginx:
+    image: "nginx:1.19"
+    restart: always
+    container_name: 'nginx'
+    ports:
+      - "90:80"
+      # - "443:443"
+    depends_on:
+      # - certbot
+      - dataRetrievalWS
+      # - ws_forecast
+    volumes:
+      - ./../nginx:/etc/nginx/conf.d/
+      # - ./../certificates/certbot/conf:/etc/letsencrypt
+      # - ./../certificates/certbot/www:/var/www/certbot
+    logging:
+      &logging
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - frontendNetwork
+    command: "/bin/sh -c 'while :; do sleep 12h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
+    # command: "/bin/sh -c 'while :; do sleep 12h; done'"
+
+
+
+  dataRetrievalWS:
+    image: "dockerflask:latest"
+    container_name: 'dataRetrievalWS'
+    restart: always
+    ports:
+      - "5000:5000"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "curl",
+          "-f",
+          "http://localhost:5000/healthCheck"
+        ]
+      interval: 10m30s
+      timeout: 10s
+      retries: 3
+    # logging: *logging
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"
+    environment:
+      PYTHONPATHS: /pythonLibs
+      PYTHONENV: /pythonEnv
+      WORKINGFOLDER: /tmp
+      DATAPATH: /data
+      LOGSPATH: /logs
+      LOGLEVEL: DEBUG
+      REMOTESYSLOGINFO: '******.*******.***, 514'
+      LOGFILESIZEMAXBYTES: 5242880
+    volumes:
+      - ./../:/python
+      - /projects/grapevine/GIT/src/data:/data
+      - /projects/grapevine/GIT/src/logs:/logs
+      - /python/.envs/dataRetrievalEnv:/pythonEnv/
+      - /argon/src/main/python/sarga/:/pythonSarga/
+      - /argon/src/main/python/modelos_climaticos/:/pythonModelos_climaticos/
+      - /projects/grapevine/GIT/src/src/main/python/ForecastAPI:/pythonForecastAPI/
+      - /projects/grapevine/GIT/src/src/main/python/ForecastDownload:/ForecastDownload/
+      - /projects/grapevine/GIT/src/src/main/python/Tools:/pythonLibs/
+      # - ./certificates:/certificates
+      # extra_hosts:
+      # - "host.docker.internal:host-gateway"
+    networks:
+      - frontendNetwork
+    # entrypoint: printenv
+    entrypoint: /bin/bash -c "$$PYTHONENV/bin/python /python/appDataRetrieval.py 5000"
+    # command: "/bin/sh -c 'while :; do sleep 12h; done'"
+
+networks:
+  frontendNetwork:
+    driver: bridge

@@ -1,0 +1,49 @@
+version: '2.2'
+services:
+
+  nginx_streamlit:
+    image: "nginx:1.19"
+    restart: always
+    container_name: 'nginx_streamlit'
+    ports:
+      - "100:80"
+    depends_on:
+      - dataTransformationWSStreamlit
+    volumes:
+      - /projects/grapevine/GIT/src/src/main/python/WebServices/dataTransformationStreamlit/nginx:/etc/nginx/conf.d/
+    logging:
+      &logging
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - network_datatransformationstreamlit
+    command: "/bin/sh -c 'while :; do sleep 12h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
+
+  dataTransformationWSStreamlit:
+    image: "dockerflaskstreamlit:latest"
+    container_name: 'dataTransformationWSStreamlit'
+    restart: always
+    ports:
+      - "5500:8501"
+    environment:
+      PYTHONENV: /pythonEnv
+      WORKINGFOLDER: /tmp
+      DATAPATH: /data
+      LOGSPATH: /logs
+      LOGLEVEL: DEBUG
+      REMOTESYSLOGINFO: 'artemisa.itainnova.es, 514'
+    volumes:
+      - /python/.envs/dataTransformationStreamlit/:/pythonEnvStreamlit/
+      - /projects/grapevine/GIT/src/src/main/python/pistara/Tools:/python/Tools/
+      - /projects/grapevine/GIT/src/src/main/python/pistara:/python/
+      - /projects/grapevine/GIT/src/data:/data
+      - /projects/grapevine/GIT/src/logs:/logs
+      - /projects/grapevine/GIT/src/src/main/python/WebServices/dataTransformationStreamlit/:/dataTransformationStreamlit/
+    networks:
+      - network_datatransformationstreamlit
+    entrypoint: /bin/bash -c "/pythonEnvStreamlit/bin/python -m streamlit run Pistara.py --server.baseUrlPath=Streamlit --server.address=dataTransformationWSStreamlit --server.port 8501 --server.enableCORS=false --server.enableXsrfProtection=false"
+
+networks:
+  network_datatransformationstreamlit:
+    driver: bridge
