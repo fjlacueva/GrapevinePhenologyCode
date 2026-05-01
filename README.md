@@ -10,6 +10,9 @@
 # Affiliations:
 1.	Instituto Tecnológico de Aragón-ITA.
 2.	Universidad de Zaragoza-UNIZAR.
+
+# DOI:
+[![DOI](https://zenodo.org/badge/1132277905.svg)](https://doi.org/10.5281/zenodo.19953952)
 	
 # Reference to the associated papers
 The code we describe in this document has been used to create the dataset “A Multisource Grapevine Phenology Dataset for Smart Farming and AI Modeling”.  This dataset is available in [1], it is presented in [2] and has been used to create the grapevine phenology prediction models discussed in [3].
